@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Authors>RICADO Group</Authors>
+    <Company>RICADO Group LP</Company>
+    <Description>A Socket Helper and Extensions Library utilizing System.Net.Sockets for .NET 5 Applications</Description>
+    <Copyright>Copyright © RICADO Group LP 2009 - 2021</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/ricado-group/dotnet-sockets</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="packageIcon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
