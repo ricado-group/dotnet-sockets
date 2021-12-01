@@ -10,10 +10,10 @@ namespace RICADO.Sockets
     {
         #region Private Properties
 
-        private Socket _socket = null;
+        private Socket? _socket = null;
         private bool _disposed = false;
 
-        private IPEndPoint _localEndPoint = null;
+        private readonly IPEndPoint _localEndPoint;
 
         #endregion
 
@@ -28,7 +28,7 @@ namespace RICADO.Sockets
         /// <summary>
         /// The Underlying Socket Object
         /// </summary>
-        public Socket Socket => _disposed ? null : _socket;
+        public Socket? Socket => _disposed ? null : _socket;
 
         /// <summary>
         /// Gets whether this <see cref="TcpListener"/> is Actively Listening for Incoming TCP Connections
@@ -139,9 +139,9 @@ namespace RICADO.Sockets
 
             try
             {
-                _socket.Bind(_localEndPoint);
+                _socket?.Bind(_localEndPoint);
 
-                _socket.Listen(backlog);
+                _socket?.Listen(backlog);
             }
             catch (SocketException)
             {
@@ -166,9 +166,18 @@ namespace RICADO.Sockets
         /// Accept an Incoming TCP Connection Asynchronously
         /// </summary>
         /// <returns>A <see cref="TcpClient"/> for the Accepted TCP Connection</returns>
-        public async Task<TcpClient> AcceptAsync()
+        /// <exception cref="System.NullReferenceException"></exception>
+        /// <exception cref="System.ObjectDisposedException"></exception>
+        public async Task<TcpClient> AcceptAsync(CancellationToken cancellationToken)
         {
-            Socket clientSocket = await _socket.AcceptAsync();
+            throwIfDisposed();
+            
+            if(_socket == null)
+            {
+                throw new NullReferenceException("Attempting to Accept an Incoming TCP Connection while the TCP Listener is Stopped");
+            }
+            
+            Socket clientSocket = await _socket.AcceptAsync(cancellationToken);
 
             return new TcpClient(clientSocket);
         }

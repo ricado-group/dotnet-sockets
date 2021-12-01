@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -10,11 +10,11 @@ namespace RICADO.Sockets
     {
         #region Private Properties
 
-        private Socket _socket = null;
+        private readonly Socket _socket;
         private bool _disposed = false;
 
-        private string _remoteHost = null;
-        private int _remotePort = IPEndPoint.MinPort;
+        private readonly string _remoteHost;
+        private readonly int _remotePort;
 
         #endregion
 
@@ -24,12 +24,12 @@ namespace RICADO.Sockets
         /// <summary>
         /// The Number of Bytes Available to Read from the Remote Host
         /// </summary>
-        public int Available => _socket?.Available ?? 0;
+        public int Available => _disposed ? 0 : _socket.Available;
 
         /// <summary>
         /// The Underlying Socket Object
         /// </summary>
-        public Socket Socket => _disposed ? null : _socket;
+        public Socket? Socket => _disposed ? null : _socket;
 
         #endregion
 
@@ -45,12 +45,7 @@ namespace RICADO.Sockets
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
         public UdpClient(string host, int port)
         {
-            if(host == null)
-            {
-                throw new ArgumentNullException(nameof(host));
-            }
-
-            _remoteHost = host;
+            _remoteHost = host ?? throw new ArgumentNullException(nameof(host));
 
             if(port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
             {
@@ -59,7 +54,8 @@ namespace RICADO.Sockets
 
             _remotePort = port;
 
-            initializeSocket();
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _socket.Connect(_remoteHost, _remotePort);
         }
 
         /// <summary>
@@ -85,7 +81,8 @@ namespace RICADO.Sockets
 
             _remotePort = port;
 
-            initializeSocket();
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _socket.Connect(_remoteHost, _remotePort);
         }
 
         #endregion
@@ -115,7 +112,6 @@ namespace RICADO.Sockets
                 finally
                 {
                     _socket.Dispose();
-                    _socket = null;
                 }
             }
 
@@ -238,16 +234,6 @@ namespace RICADO.Sockets
 
 
         #region Private Methods
-
-        /// <summary>
-        /// Initializes the Socket
-        /// </summary>
-        private void initializeSocket()
-        {
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            _socket.Connect(_remoteHost, _remotePort);
-        }
 
         /// <summary>
         /// Throws an Exception if this <see cref="UdpClient"/> instance has been Disposed
