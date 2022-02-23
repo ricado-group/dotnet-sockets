@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if NETSTANDARD
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace RICADO.Sockets
         /// <summary>
         /// The Underlying Socket Object
         /// </summary>
-        public Socket? Socket => _disposed ? null : _socket;
+        public Socket Socket => _disposed ? null : _socket;
 
         #endregion
 
@@ -47,7 +48,7 @@ namespace RICADO.Sockets
         {
             _remoteHost = host ?? throw new ArgumentNullException(nameof(host));
 
-            if(port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(port), "The Port Number specified is outside the valid Range of IPEndPoint.MinPort or IPEndPoint.MaxPort");
             }
@@ -67,7 +68,7 @@ namespace RICADO.Sockets
         /// <exception cref="System.ArgumentOutOfRangeException"></exception>
         public UdpClient(IPAddress address, int port)
         {
-            if(address == null)
+            if (address == null)
             {
                 throw new ArgumentNullException(nameof(address));
             }
@@ -95,12 +96,12 @@ namespace RICADO.Sockets
         /// </summary>
         public void Dispose()
         {
-            if(_disposed == true)
+            if (_disposed == true)
             {
                 return;
             }
-            
-            if(_socket != null)
+
+            if (_socket != null)
             {
                 try
                 {
@@ -124,7 +125,7 @@ namespace RICADO.Sockets
         /// <param name="buffer">The Data to Send</param>
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes sent to the Remote Host</returns>
-        public Task<int> SendAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken)
+        public Task<int> SendAsync(byte[] buffer, CancellationToken cancellationToken)
         {
             return SendAsync(buffer, Timeout.InfiniteTimeSpan, cancellationToken);
         }
@@ -137,7 +138,7 @@ namespace RICADO.Sockets
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes sent to the Remote Host</returns>
         /// <exception cref="System.TimeoutException"></exception>
-        public Task<int> SendAsync(ReadOnlyMemory<byte> buffer, int timeout, CancellationToken cancellationToken)
+        public Task<int> SendAsync(byte[] buffer, int timeout, CancellationToken cancellationToken)
         {
             return SendAsync(buffer, TimeSpan.FromMilliseconds(timeout), cancellationToken);
         }
@@ -150,27 +151,59 @@ namespace RICADO.Sockets
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes sent to the Remote Host</returns>
         /// <exception cref="System.TimeoutException"></exception>
-        public async Task<int> SendAsync(ReadOnlyMemory<byte> buffer, TimeSpan timeout, CancellationToken cancellationToken)
+        public async Task<int> SendAsync(byte[] buffer, TimeSpan timeout, CancellationToken cancellationToken)
         {
             throwIfDisposed();
 
-            using CancellationTokenSource sendCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-            ValueTask<int> sendTask = _socket.SendAsync(buffer, SocketFlags.None, sendCts.Token);
-
-            if (timeout == Timeout.InfiniteTimeSpan || sendTask.IsCompleted == true || sendTask.IsCanceled == true || cancellationToken.IsCancellationRequested == true)
+            if (timeout == Timeout.InfiniteTimeSpan || cancellationToken.IsCancellationRequested == true)
             {
-                return await sendTask;
+                return await _socket.SendAsync(buffer, SocketFlags.None, cancellationToken);
             }
 
-            try
+            using (CancellationTokenSource sendCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                return await sendTask.AsTask().WaitAsync(timeout, cancellationToken);
-            }
-            catch (TimeoutException)
-            {
-                sendCts.Cancel();
-                throw new TimeoutException("Failed to Send to the Remote Host '" + _remoteHost + ":" + _remotePort.ToString() + "' within the Timeout Period");
+                Task<int> sendTask = _socket.SendAsync(buffer, SocketFlags.None, sendCts.Token);
+
+                if (sendTask.IsCompleted == true || sendTask.IsCanceled == true || cancellationToken.IsCancellationRequested == true)
+                {
+                    return await sendTask;
+                }
+
+                using (CancellationTokenSource delayCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                {
+                    Task delayTask = Task.Delay(timeout, delayCts.Token);
+
+                    if (sendTask == await Task.WhenAny(sendTask, delayTask))
+                    {
+                        delayCts.Cancel();
+
+                        try
+                        {
+                            await delayTask;
+                        }
+                        catch
+                        {
+                        }
+
+                        return await sendTask;
+                    }
+                    else
+                    {
+                        sendCts.Cancel();
+
+                        try
+                        {
+                            await sendTask;
+                        }
+                        catch
+                        {
+                        }
+
+                        await delayTask;
+
+                        throw new TimeoutException("Failed to Send to the Remote Host '" + _remoteHost + ":" + _remotePort.ToString() + "' within the Timeout Period");
+                    }
+                }
             }
         }
 
@@ -180,7 +213,7 @@ namespace RICADO.Sockets
         /// <param name="buffer">The Data Received</param>
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes received to the Remote Host</returns>
-        public Task<int> ReceiveAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+        public Task<int> ReceiveAsync(byte[] buffer, CancellationToken cancellationToken)
         {
             return ReceiveAsync(buffer, Timeout.InfiniteTimeSpan, cancellationToken);
         }
@@ -193,7 +226,7 @@ namespace RICADO.Sockets
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes received to the Remote Host</returns>
         /// <exception cref="System.TimeoutException"></exception>
-        public Task<int> ReceiveAsync(Memory<byte> buffer, int timeout, CancellationToken cancellationToken)
+        public Task<int> ReceiveAsync(byte[] buffer, int timeout, CancellationToken cancellationToken)
         {
             return ReceiveAsync(buffer, TimeSpan.FromMilliseconds(timeout), cancellationToken);
         }
@@ -206,27 +239,59 @@ namespace RICADO.Sockets
         /// <param name="cancellationToken">A Cancellation Token that can be used to signal the Asynchronous Operation should be Cancelled</param>
         /// <returns>A Task that Completes with the number of Bytes received to the Remote Host</returns>
         /// <exception cref="System.TimeoutException"></exception>
-        public async Task<int> ReceiveAsync(Memory<byte> buffer, TimeSpan timeout, CancellationToken cancellationToken)
+        public async Task<int> ReceiveAsync(byte[] buffer, TimeSpan timeout, CancellationToken cancellationToken)
         {
             throwIfDisposed();
 
-            using CancellationTokenSource receiveCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-            ValueTask<int> receiveTask = _socket.ReceiveAsync(buffer, SocketFlags.None, receiveCts.Token);
-
-            if (timeout == Timeout.InfiniteTimeSpan || receiveTask.IsCompleted == true || receiveTask.IsCanceled == true || cancellationToken.IsCancellationRequested == true)
+            if (timeout == Timeout.InfiniteTimeSpan || cancellationToken.IsCancellationRequested == true)
             {
-                return await receiveTask;
+                return await _socket.ReceiveAsync(buffer, SocketFlags.None, cancellationToken);
             }
 
-            try
+            using (CancellationTokenSource receiveCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
-                return await receiveTask.AsTask().WaitAsync(timeout, cancellationToken);
-            }
-            catch (TimeoutException)
-            {
-                receiveCts.Cancel();
-                throw new TimeoutException("Failed to Receive from the Remote Host '" + _remoteHost + ":" + _remotePort.ToString() + "' within the Timeout Period");
+                Task<int> receiveTask = _socket.ReceiveAsync(buffer, SocketFlags.None, receiveCts.Token);
+
+                if (receiveTask.IsCompleted == true || receiveTask.IsCanceled == true || cancellationToken.IsCancellationRequested == true)
+                {
+                    return await receiveTask;
+                }
+
+                using (CancellationTokenSource delayCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                {
+                    Task delayTask = Task.Delay(timeout, delayCts.Token);
+
+                    if (receiveTask == await Task.WhenAny(receiveTask, delayTask))
+                    {
+                        delayCts.Cancel();
+
+                        try
+                        {
+                            await delayTask;
+                        }
+                        catch
+                        {
+                        }
+
+                        return await receiveTask;
+                    }
+                    else
+                    {
+                        receiveCts.Cancel();
+
+                        try
+                        {
+                            await receiveTask;
+                        }
+                        catch
+                        {
+                        }
+
+                        await delayTask;
+
+                        throw new TimeoutException("Failed to Receive from the Remote Host '" + _remoteHost + ":" + _remotePort.ToString() + "' within the Timeout Period");
+                    }
+                }
             }
         }
 
@@ -241,7 +306,7 @@ namespace RICADO.Sockets
         /// <exception cref="System.ObjectDisposedException"></exception>
         private void throwIfDisposed()
         {
-            if(_disposed == true)
+            if (_disposed == true)
             {
                 throw new ObjectDisposedException(GetType().FullName);
             }
@@ -250,3 +315,4 @@ namespace RICADO.Sockets
         #endregion
     }
 }
+#endif

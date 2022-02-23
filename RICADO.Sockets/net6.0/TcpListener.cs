@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if NET6_0_OR_GREATER
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -212,3 +213,4 @@ namespace RICADO.Sockets
         #endregion
     }
 }
+#endif
