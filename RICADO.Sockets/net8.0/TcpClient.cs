@@ -1,4 +1,4 @@
-﻿#if NET6_0_OR_GREATER
+﻿#if NET8_0_OR_GREATER
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -35,7 +35,7 @@ namespace RICADO.Sockets
         /// <summary>
         /// The Underlying Socket Object
         /// </summary>
-        public Socket? Socket => _disposed ? null : _socket;
+        public Socket Socket => _disposed ? null : _socket;
 
         /// <summary>
         /// Gets or Sets a <see cref="bool"/> value that specifies whether this <see cref="TcpClient"/> is using the Nagle Algorithm
@@ -63,7 +63,7 @@ namespace RICADO.Sockets
         /// <summary>
         /// Gets or Sets a Value that specifies whether this <see cref="TcpClient"/> will delay closing the Socket in an attempt to send all pending data
         /// </summary>
-        public LingerOption? LingerState
+        public LingerOption LingerState
         {
             get
             {
@@ -92,7 +92,7 @@ namespace RICADO.Sockets
             {
                 if (_disposed == false)
                 {
-                    object? value = _socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive);
+                    object value = _socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive);
 
                     if (value != null && value is bool)
                     {
@@ -120,7 +120,7 @@ namespace RICADO.Sockets
             {
                 if (_disposed == false)
                 {
-                    object? value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval);
+                    object value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval);
 
                     if (value != null && value is int)
                     {
@@ -148,7 +148,7 @@ namespace RICADO.Sockets
             {
                 if (_disposed == false)
                 {
-                    object? value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime);
+                    object value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime);
 
                     if (value != null && value is int)
                     {
@@ -176,7 +176,7 @@ namespace RICADO.Sockets
             {
                 if (_disposed == false)
                 {
-                    object? value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount);
+                    object value = _socket.GetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount);
 
                     if (value != null && value is int)
                     {
@@ -276,14 +276,14 @@ namespace RICADO.Sockets
 
             if(acceptedSocket.RemoteEndPoint is IPEndPoint)
             {
-                IPEndPoint? dnsEndPoint = acceptedSocket.RemoteEndPoint as IPEndPoint;
+                IPEndPoint dnsEndPoint = acceptedSocket.RemoteEndPoint as IPEndPoint;
 
                 _remoteHost = dnsEndPoint?.Address.ToString() ?? "";
                 _remotePort = dnsEndPoint?.Port ?? IPEndPoint.MinPort;
             }
             else if(acceptedSocket.RemoteEndPoint is DnsEndPoint)
             {
-                DnsEndPoint? dnsEndPoint = acceptedSocket.RemoteEndPoint as DnsEndPoint;
+                DnsEndPoint dnsEndPoint = acceptedSocket.RemoteEndPoint as DnsEndPoint;
 
                 _remoteHost = dnsEndPoint?.Host ?? "";
                 _remotePort = dnsEndPoint?.Port ?? IPEndPoint.MinPort;

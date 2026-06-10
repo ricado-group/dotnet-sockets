@@ -1,4 +1,4 @@
-﻿#if NET6_0_OR_GREATER
+﻿#if NET8_0_OR_GREATER
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -11,7 +11,7 @@ namespace RICADO.Sockets
     {
         #region Private Properties
 
-        private Socket? _socket = null;
+        private Socket _socket = null;
         private bool _disposed = false;
 
         private readonly IPEndPoint _localEndPoint;
@@ -29,7 +29,7 @@ namespace RICADO.Sockets
         /// <summary>
         /// The Underlying Socket Object
         /// </summary>
-        public Socket? Socket => _disposed ? null : _socket;
+        public Socket Socket => _disposed ? null : _socket;
 
         /// <summary>
         /// Gets whether this <see cref="TcpListener"/> is Actively Listening for Incoming TCP Connections

@@ -27,7 +27,7 @@ namespace RICADO.Sockets
                 return await acceptTask;
             }
 
-            acceptTask.ContinueWith(_ => acceptTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            _ = acceptTask.ContinueWith(_ => acceptTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
             return await cancellationTask;
         }
@@ -48,7 +48,7 @@ namespace RICADO.Sockets
                 return;
             }
 
-            connectTask.ContinueWith(_ => connectTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            _ = connectTask.ContinueWith(_ => connectTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
             await cancellationTask;
         }
@@ -70,7 +70,7 @@ namespace RICADO.Sockets
                 return await sendTask;
             }
 
-            sendTask.ContinueWith(_ => sendTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            _ = sendTask.ContinueWith(_ => sendTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
             return await cancellationTask;
         }
@@ -92,7 +92,7 @@ namespace RICADO.Sockets
                 return await receiveTask;
             }
 
-            receiveTask.ContinueWith(_ => receiveTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            _ = receiveTask.ContinueWith(_ => receiveTask.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
             return await cancellationTask;
         }
